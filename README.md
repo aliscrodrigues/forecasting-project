@@ -25,7 +25,8 @@ forecasting-project/
 │   ├── data/
 │   │   └── loader.py
 │   ├── preprocessing/
-│   │   └── transform.py
+│   │   ├── transform.py
+│   │   └── numpy_pipeline.py
 │   ├── models/
 │   │   └── linear.py
 │   ├── training/
@@ -109,7 +110,8 @@ Nesta etapa, as funções contêm assinaturas com type hints, `pass` e prints in
 
 - [x] Estrutura modular e funções com type hints (stubs)
 - [x] Dataset fake de desenvolvimento
-- [ ] Implementação do pipeline de dados e features
-- [ ] Split temporal e regressão linear
+- [x] Implementação do pipeline de dados e features
+- [x] Pipeline de pré-processamento NumPy (normalização, padronização, estatísticas, dimensões)
+- [x] Split temporal e regressão linear
 - [ ] Integração com M5
 - [ ] Modelo MLP com PyTorch
