@@ -73,10 +73,12 @@ flowchart TD
 
 ## Como executar
 
+Execute a partir da raiz do repositório:
+
 ### Com uv (recomendado)
 
 ```bash
-uv run python -m src.main
+uv run python src/main.py
 ```
 
 ### Com pip
@@ -85,7 +87,7 @@ uv run python -m src.main
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-python -m src.main
+python src/main.py
 ```
 
 Nesta etapa, as funções contêm assinaturas com type hints, `pass` e prints indicando cada etapa do pipeline; a implementação virá nas próximas fases.

@@ -1,18 +1,18 @@
 import numpy as np
 
-from src.data.loader import load_sales_data, validate_sales_schema
-from src.evaluation.metrics import evaluate
-from src.models.linear import LinearRegressionModel
-from src.preprocessing.numpy_pipeline import preprocess_pipeline
-from src.preprocessing.transform import (
+from data.loader import load_sales_data, validate_sales_schema
+from evaluation.metrics import evaluate
+from models.linear import LinearRegressionModel
+from preprocessing.numpy_pipeline import preprocess_pipeline
+from preprocessing.transform import (
     MONTH_COLUMN,
     TARGET_AHEAD_COLUMN,
     aggregate_monthly_by_sku,
     build_supervised_dataset,
     lag_column_names,
 )
-from src.training.split import split_features_target, temporal_split
-from src.utils.config import default_config
+from training.split import split_features_target, temporal_split
+from utils.config import default_config
 
 
 def main() -> None:
