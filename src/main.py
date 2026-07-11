@@ -11,6 +11,7 @@ from preprocessing.transform import (
     build_supervised_dataset,
     lag_column_names,
 )
+from training.pytorch_data import batch_to_device, prepare_torch_data
 from training.split import split_features_target, temporal_split
 from utils.config import default_config
 
@@ -76,17 +77,34 @@ def main() -> None:
     X_val_pp = pipeline_result["X_val"]
     X_test_pp = pipeline_result["X_test"]
 
-    # ─── Step 8: Train linear regression model ────────────────────────────
+    # ─── Step 8: Convert arrays and create PyTorch data loaders ──────────
+    torch_data = prepare_torch_data(
+        X_train_pp, y_train,
+        X_val_pp, y_val,
+        X_test_pp, y_test,
+        batch_size=32,
+    )
+    # A model and each batch must share a device. Datasets stay on CPU and
+    # batches are transferred on demand to avoid exhausting accelerator RAM.
+    X_batch, y_batch = batch_to_device(
+        next(iter(torch_data.train_loader)), torch_data.device
+    )
+    print(
+        f"  First train batch: X={tuple(X_batch.shape)}, "
+        f"y={tuple(y_batch.shape)}, device={X_batch.device}"
+    )
+
+    # ─── Step 9: Train linear regression model ────────────────────────────
     print("\n─── Model Training ───")
     model = LinearRegressionModel()
     model.fit(X_train_pp, y_train)
 
-    # ─── Step 9: Predict and evaluate on validation ───────────────────────
+    # ─── Step 10: Predict and evaluate on validation ──────────────────────
     print("\n─── Validation Results ───")
     val_predictions = model.predict(X_val_pp)
     val_metrics = evaluate(y_val, val_predictions)
 
-    # ─── Step 10: Predict and evaluate on test ────────────────────────────
+    # ─── Step 11: Predict and evaluate on test ────────────────────────────
     print("\n─── Test Results ───")
     test_predictions = model.predict(X_test_pp)
     test_metrics = evaluate(y_test, test_predictions)

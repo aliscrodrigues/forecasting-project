@@ -1,5 +1,6 @@
 numpy==2.4.6
 pandas==3.0.3
+torch>=2.7.0
 python-dateutil==2.9.0.post0
 six==1.17.0
 tzdata==2026.2 ; sys_platform == 'emscripten' or sys_platform == 'win32'
