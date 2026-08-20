@@ -1,5 +1,8 @@
 import numpy as np
+import torch
 
+from models.neural import NeuralModel
+from training.train import train_model
 from data.loader import load_sales_data, validate_sales_schema
 from evaluation.metrics import evaluate
 from models.linear import LinearRegressionModel
@@ -94,19 +97,35 @@ def main() -> None:
         f"y={tuple(y_batch.shape)}, device={X_batch.device}"
     )
 
-    # ─── Step 9: Train linear regression model ────────────────────────────
-    print("\n─── Model Training ───")
-    model = LinearRegressionModel()
-    model.fit(X_train_pp, y_train)
+# ─── Step 9: PyTorch Phase 2 ────────────
 
-    # ─── Step 10: Predict and evaluate on validation ──────────────────────
-    print("\n─── Validation Results ───")
-    val_predictions = model.predict(X_val_pp)
+    input_size = X_train_pp.shape[1]
+    ai_model = NeuralModel(input_dim=input_size, hidden_dim=64, output_dim=1)
+
+    print("\n─── Starting Neural Network Training ───")
+    trained_model = train_model(ai_model, torch_data.train_loader, torch_data.val_loader)
+
+    model_path = "demand_model.pth"
+    torch.save(trained_model.state_dict(), model_path)
+    print(f"\nModel successfully saved to {model_path}!")
+
+    loaded_model = NeuralModel(input_dim=input_size, hidden_dim=64, output_dim=1)
+    loaded_model.load_state_dict(torch.load(model_path))
+    loaded_model.eval()
+
+    sample_prediction = loaded_model(X_batch[0].unsqueeze(0))
+    print(f"\nSales prediction for the first test item: {sample_prediction.item():.4f}")
+
+    print("\n─── Final Evaluation ───")
+    with torch.no_grad():
+
+        val_tensor = torch.tensor(X_val_pp, dtype=torch.float32)
+        test_tensor = torch.tensor(X_test_pp, dtype=torch.float32)
+        
+        val_predictions = loaded_model(val_tensor).numpy()
+        test_predictions = loaded_model(test_tensor).numpy()
+
     val_metrics = evaluate(y_val, val_predictions)
-
-    # ─── Step 11: Predict and evaluate on test ────────────────────────────
-    print("\n─── Test Results ───")
-    test_predictions = model.predict(X_test_pp)
     test_metrics = evaluate(y_test, test_predictions)
 
     # ─── Summary ──────────────────────────────────────────────────────────
