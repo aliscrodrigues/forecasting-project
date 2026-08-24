@@ -2,16 +2,26 @@
 
 Projeto de previsão de demanda desenvolvido para a disciplina de Engenharia de Software da Especialização em Deep Learning (UFPE).
 
-## Problemão
+## Problema
 
-Prever a **demanda mensal por SKU** (produto) a partir de histórico de vendas. O dataset de referência é o [M5 Forecasting](https://www.kaggle.com/competitions/m5-forecasting-accuracy) (Walmart), em que cada SKU corresponde ao `item_id` agregado em todas as lojas.
+Prever a **demanda mensal por SKU** (produto) a partir de histórico de vendas. O dataset de referência é o [M5 Forecasting](https://www.kaggle.com/competitions/m5-forecasting-accuracy) (Walmart), em que cada SKU corresponde ao `item_id` **agregado em todas as lojas** (`store_id`).
+
+O M5 completo reúne mais de 3.000 produtos em 10 lojas — escala impraticável para o escopo do projeto. Por isso, trabalhamos com os **50 `item_id` de maior demanda total** (vendas somadas em todas as lojas e em todo o histórico disponível). Essa seleção prioriza SKUs com volume relevante e histórico longo, mantendo séries representativas da competição sem o custo de modelar o catálogo inteiro.
+
+A análise em `notebooks/m5_series_analysis.ipynb` mostrou que, para esse subconjunto:
+
+- o histórico cobre **jan/2011 – jun/2016** (~66 meses após agregação mensal), adequado para lags bastante amplos;
+- a **intermitência é baixa** (poucos meses com demanda zero);
+- há **sazonalidade e variabilidade** distintas entre SKUs, mas em geral compatíveis com previsão mensal tabular.
+
+Os dados diários filtrados são exportados por `scripts/extract_m5.py` em `data/m5/processed/m5_daily_sales.parquet` (não versionado no repositório).
 
 ## Abordagem
 
 1. Carregar vendas brutas (diárias) e agregar por mês e por SKU.
 2. Transformar cada série temporal em um dataset tabular `(X, y)`:
-   - **X**: lags históricos (1, 2, 3, 6 e 12 meses);
-   - **y**: demanda do próximo mês (`horizon = 1`).
+  - **X**: lags históricos (1, 2, 3, 6 e 12 meses);
+  - **y**: demanda do próximo mês (`horizon = 1`).
 3. Dividir os dados com **split temporal** (treino, validação e teste).
 4. Treinar um modelo de regressão linear com **NumPy** (baseline).
 5. Evoluir para uma **MLP com PyTorch**, reutilizando o mesmo formato tabular.
@@ -59,17 +69,21 @@ flowchart TD
     model --> metrics["Evaluate MAE / RMSE<br/>evaluation/"]
 ```
 
-| Etapa | Módulo | Entrada | Saída |
-|-------|--------|---------|-------|
-| Configuração | `utils/config` | — | `ProjectConfig` |
-| Carga | `data/loader` | CSV diário | `DataFrame` bruto |
-| Validação | `data/loader` | dados brutos | schema validado |
-| Agregação | `preprocessing/transform` | vendas diárias | série mensal por SKU |
-| Features | `preprocessing/transform` | série mensal | `(X, y)` tabular com lags |
-| Split | `training/split` | dataset supervisionado | treino / validação / teste |
-| Modelo | `models/linear` | arrays NumPy | previsões |
-| Avaliação (validação) | `evaluation/metrics` | `y_true`, `y_pred` (val) | MAE, RMSE |
-| Avaliação (teste) | `evaluation/metrics` | `y_true`, `y_pred` (test) | MAE, RMSE |
+
+
+
+| Etapa                 | Módulo                    | Entrada                   | Saída                      |
+| --------------------- | ------------------------- | ------------------------- | -------------------------- |
+| Configuração          | `utils/config`            | —                         | `ProjectConfig`            |
+| Carga                 | `data/loader`             | CSV diário                | `DataFrame` bruto          |
+| Validação             | `data/loader`             | dados brutos              | schema validado            |
+| Agregação             | `preprocessing/transform` | vendas diárias            | série mensal por SKU       |
+| Features              | `preprocessing/transform` | série mensal              | `(X, y)` tabular com lags  |
+| Split                 | `training/split`          | dataset supervisionado    | treino / validação / teste |
+| Modelo                | `models/linear`           | arrays NumPy              | previsões                  |
+| Avaliação (validação) | `evaluation/metrics`      | `y_true`, `y_pred` (val)  | MAE, RMSE                  |
+| Avaliação (teste)     | `evaluation/metrics`      | `y_true`, `y_pred` (test) | MAE, RMSE                  |
+
 
 ## Como executar
 
@@ -94,18 +108,20 @@ Nesta etapa, as funções contêm assinaturas com type hints, `pass` e prints in
 
 ## Decisões de design
 
-| Tópico | Decisão |
-|--------|---------|
-| SKU | `item_id` agregado em todas as `store_id` |
-| Granularidade | mensal |
-| Features iniciais | lags 1, 2, 3, 6 e 12 |
-| Horizonte | 1 mês à frente |
-| Split | temporal (não aleatório) |
-| Modelo inicial | regressão linear (NumPy) |
+
+| Tópico            | Decisão                                   |
+| ----------------- | ----------------------------------------- |
+| SKU               | `item_id` agregado em todas as `store_id` |
+| Granularidade     | mensal                                    |
+| Features iniciais | lags 1, 2, 3, 6 e 12                      |
+| Horizonte         | 1 mês à frente                            |
+| Split             | temporal (não aleatório)                  |
+| Modelo inicial    | regressão linear (NumPy)                  |
+
 
 ## Dados
 
-- **Produção / entrega final:** M5 Forecasting (não versionado neste repositório).
+- **Produção:** M5 Forecasting — top 50 SKUs por demanda total (`scripts/extract_m5.py` → `data/m5/processed/m5_daily_sales.parquet`).
 - **Desenvolvimento:** `data/sample/fake_sales.csv` (3 SKUs, 2 lojas, jan/2014–dez/2015).
 
 ## Roadmap
@@ -115,5 +131,5 @@ Nesta etapa, as funções contêm assinaturas com type hints, `pass` e prints in
 - [x] Implementação do pipeline de dados e features
 - [x] Pipeline de pré-processamento NumPy (normalização, padronização, estatísticas, dimensões)
 - [x] Split temporal e regressão linear
-- [ ] Integração com M5
+- [x] Integração com M5 (extração e análise exploratória)
 - [ ] Modelo MLP com PyTorch
