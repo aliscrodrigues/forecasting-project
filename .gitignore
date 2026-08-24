@@ -90,7 +90,7 @@ Desktop.ini
 logs/
 
 # Local data / models (uncomment or adjust as needed)
-# data/
+data/m5/
 # *.csv
 # *.parquet
 # *.pkl

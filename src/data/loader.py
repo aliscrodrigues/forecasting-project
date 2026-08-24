@@ -1,13 +1,34 @@
+from pathlib import Path
 import pandas as pd
 
 REQUIRED_COLUMNS = {"date", "item_id", "sales"}
 OPTIONAL_COLUMNS = {"store_id"}
 
 
-def load_sales_data(path: str) -> pd.DataFrame:
-    """Load raw sales data from a CSV file."""
-    print(f"Loading sales data: {path}")
-    df = pd.read_csv(path, parse_dates=["date"])
+def load_sales_data(path: str | Path) -> pd.DataFrame:
+    """Load raw sales data from a CSV or Parquet file.
+
+    Expected columns: ``date``, ``item_id``, ``sales``, and optionally ``store_id``.
+    """
+    file_path = Path(path)
+    print(f"Loading sales data: {file_path}")
+
+    if not file_path.exists():
+        raise FileNotFoundError(f"Sales data file not found: {file_path}")
+
+    suffix = file_path.suffix.lower()
+    if suffix == ".parquet":
+        df = pd.read_parquet(file_path)
+    elif suffix == ".csv":
+        df = pd.read_csv(file_path, parse_dates=["date"])
+    else:
+        raise ValueError(
+            f"Unsupported file format '{suffix}'. Expected .csv or .parquet."
+        )
+
+    if "date" in df.columns and not pd.api.types.is_datetime64_any_dtype(df["date"]):
+        df["date"] = pd.to_datetime(df["date"])
+
     print(f"  → Loaded {len(df)} rows, {len(df.columns)} columns")
     return df
 
