@@ -46,9 +46,7 @@ def main() -> None:
     X_train_pp, X_val_pp, X_test_pp = scale_features(
         X_train, X_val, X_test, method="standardize"
     )
-    y_train_s, y_val_s, y_test_s, y_loc, y_scale = scale_target(
-        y_train, y_val, y_test
-    )
+    y_train_s, y_val_s, y_test_s, y_loc, y_scale = scale_target(y_train, y_val, y_test)
 
     device = get_device()
     train_loader = make_loader(
@@ -89,9 +87,17 @@ def main() -> None:
     print(f"  Validation samples:  {X_val_pp.shape[0]}")
     print(f"  Test samples:        {X_test_pp.shape[0]}")
     print(f"  Features (lags):     {X_train_pp.shape[1]}")
-    print(f"  Validation MAE:      {val_metrics['mae']:.4f}  (MAE/mean={val_metrics['mae_over_mean']:.4f})")
+    val_mae_ratio = val_metrics["mae_over_mean"]
+    test_mae_ratio = test_metrics["mae_over_mean"]
+    print(
+        f"  Validation MAE:      {val_metrics['mae']:.4f}  "
+        f"(MAE/mean={val_mae_ratio:.4f})"
+    )
     print(f"  Validation RMSE:     {val_metrics['rmse']:.4f}")
-    print(f"  Test MAE:            {test_metrics['mae']:.4f}  (MAE/mean={test_metrics['mae_over_mean']:.4f})")
+    print(
+        f"  Test MAE:            {test_metrics['mae']:.4f}  "
+        f"(MAE/mean={test_mae_ratio:.4f})"
+    )
     print(f"  Test RMSE:           {test_metrics['rmse']:.4f}")
     print("=" * 60)
     print("\nPipeline finished successfully.")

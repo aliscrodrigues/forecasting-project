@@ -13,13 +13,13 @@ def preprocess_series(data: pd.DataFrame) -> pd.DataFrame:
     data = data.copy()
     data[MONTH_COLUMN] = data[DATE_COLUMN].dt.to_period("M").dt.to_timestamp()
     monthly = (
-        data.groupby([SKU_COLUMN, MONTH_COLUMN])[TARGET_COLUMN]
-        .sum()
-        .reset_index()
+        data.groupby([SKU_COLUMN, MONTH_COLUMN])[TARGET_COLUMN].sum().reset_index()
     )
     monthly = monthly.sort_values([SKU_COLUMN, MONTH_COLUMN]).reset_index(drop=True)
-    print(f"  → Monthly series: {len(monthly)} records "
-          f"({monthly[SKU_COLUMN].nunique()} SKUs)")
+    print(
+        f"  → Monthly series: {len(monthly)} records "
+        f"({monthly[SKU_COLUMN].nunique()} SKUs)"
+    )
     return monthly
 
 

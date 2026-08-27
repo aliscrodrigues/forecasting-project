@@ -49,6 +49,9 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
+# Ruff
+.ruff_cache/
+
 # Type checkers
 .mypy_cache/
 .dmypy.json
@@ -91,6 +94,7 @@ logs/
 
 # Local data / models (uncomment or adjust as needed)
 data/m5/
+*.pth
 # *.csv
 # *.parquet
 # *.pkl

@@ -105,6 +105,16 @@ pip install -r requirements.txt
 python src/main.py
 ```
 
+### Lint e formatação (Ruff)
+
+Instale as dependências de desenvolvimento e execute o Ruff a partir da raiz:
+
+```bash
+uv sync --group dev
+uv run ruff check src scripts
+uv run ruff format src scripts
+```
+
 O pipeline está implementado; execute a partir da raiz do repositório:
 
 ## Decisões de design

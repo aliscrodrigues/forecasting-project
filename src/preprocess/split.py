@@ -30,9 +30,7 @@ def time_based_split(
     - Validation: train_end < dates <= val_end
     - Test: dates > val_end
     """
-    print(
-        f"Time-based split (train until {train_end}, validation until {val_end})..."
-    )
+    print(f"Time-based split (train until {train_end}, validation until {val_end})...")
     train_end_dt = pd.Timestamp(train_end)
     val_end_dt = pd.Timestamp(val_end)
 

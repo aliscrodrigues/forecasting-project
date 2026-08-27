@@ -24,14 +24,17 @@ def make_loader(
     if batch_size <= 0:
         raise ValueError("batch_size must be greater than zero")
     if len(X) != len(y):
-        raise ValueError(f"X and y contain different sample counts: {len(X)} != {len(y)}")
+        raise ValueError(
+            f"X and y contain different sample counts: {len(X)} != {len(y)}"
+        )
 
     X_tensor = torch.from_numpy(np.array(X, dtype=np.float32, order="C", copy=True))
     y_array = np.array(y, dtype=np.float32, order="C", copy=True)
     if y_array.ndim == 1:
         y_array = y_array.reshape(-1, 1)
     y_tensor = torch.from_numpy(y_array)
-    return DataLoader(TensorDataset(X_tensor, y_tensor), batch_size=batch_size, shuffle=shuffle)
+    dataset = TensorDataset(X_tensor, y_tensor)
+    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
 
 def batch_to_device(
@@ -46,9 +49,7 @@ def batch_to_device(
     )
 
 
-def predict(
-    model: torch.nn.Module, X: np.ndarray, device: torch.device
-) -> np.ndarray:
+def predict(model: torch.nn.Module, X: np.ndarray, device: torch.device) -> np.ndarray:
     """Run inference and return 1-D predictions on CPU as NumPy."""
     model.eval()
     features = torch.tensor(X, dtype=torch.float32, device=device)

@@ -15,3 +15,23 @@ dependencies = [
     "seaborn>=0.13.2",
     "torch>=2.7.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.11",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+src = ["src", "scripts"]
+exclude = ["notebooks", ".venv", "__pycache__"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["data", "evaluation", "models", "preprocess", "train", "utils"]
+
+[tool.ruff.format]
+quote-style = "double"
