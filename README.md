@@ -46,6 +46,12 @@ forecasting-project/
 │   │   └── metrics.py
 │   └── utils/
 │       └── pytorch.py
+├── tests/
+│   ├── test_metrics.py
+│   ├── test_scaler.py
+│   ├── test_split.py
+│   └── test_transform.py
+├── Makefile
 ├── data/
 │   └── sample/
 │       └── fake_sales.csv
@@ -88,15 +94,66 @@ flowchart TD
 
 ## Como executar
 
-Execute a partir da raiz do repositório:
+Execute todos os comandos a partir da **raiz do repositório**.
 
-### Com uv (recomendado)
+### Pré-requisitos
+
+- [uv](https://docs.astral.sh/uv/) (gerenciador de dependências e ambiente virtual)
+- `make` (já disponível no macOS/Linux; no Windows, use WSL ou [Make para Windows](https://gnuwin32.sourceforge.net/packages/make.htm))
+
+### Primeira vez (clone do repositório)
 
 ```bash
-uv run python src/main.py
+make setup
 ```
 
-### Com pip
+Cria o `.venv`, resolve a versão do Python (`.python-version`) e instala dependências de runtime e desenvolvimento (incluindo Ruff).
+
+Com dados de exemplo (`data/sample/fake_sales.csv`):
+
+```bash
+make run-project
+```
+
+Com o dataset M5 (download + preparação — gera `data/m5/processed/m5_daily_sales.parquet`):
+
+```bash
+make extract-data
+make run-project
+```
+
+### Comandos do Makefile
+
+| Comando | Descrição |
+| --- | --- |
+| `make setup` | Instala dependências (`uv sync --group dev`) |
+| `make run-project` | Executa o pipeline de previsão (`src/main.py`) |
+| `make run-tests` | Roda os testes unitários (`unittest`) |
+| `make extract-data` | Baixa e prepara o dataset M5 (`scripts/extract_m5.py`) |
+| `make check` | Lint com Ruff (`src`, `scripts`, `tests`) |
+| `make format` | Formata o código com Ruff |
+
+### Desenvolvimento
+
+Fluxo típico após alterações no código:
+
+```bash
+make check        # lint
+make run-tests    # testes
+make format       # formatação (se necessário)
+```
+
+Os testes usam `PYTHONPATH=src` internamente, para que os imports (`from evaluation.metrics import ...`) funcionem sem instalar o projeto como pacote.
+
+Equivalente manual dos testes:
+
+```bash
+PYTHONPATH=src uv run python -m unittest discover -s tests -v
+```
+
+### Alternativa com pip
+
+Sem `uv`, use o `requirements.txt`:
 
 ```bash
 python -m venv .venv
@@ -105,17 +162,18 @@ pip install -r requirements.txt
 python src/main.py
 ```
 
-### Lint e formatação (Ruff)
-
-Instale as dependências de desenvolvimento e execute o Ruff a partir da raiz:
+Para testes com pip/venv ativo:
 
 ```bash
-uv sync --group dev
-uv run ruff check src scripts
-uv run ruff format src scripts
+PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
-O pipeline está implementado; execute a partir da raiz do repositório:
+Para lint com pip (instale o Ruff separadamente: `pip install ruff`):
+
+```bash
+ruff check src scripts tests
+ruff format src scripts tests
+```
 
 ## Decisões de design
 
@@ -144,3 +202,5 @@ O pipeline está implementado; execute a partir da raiz do repositório:
 - [x] Split temporal
 - [x] Integração com M5 (extração e análise exploratória)
 - [x] Modelo MLP com PyTorch
+- [x] Testes unitários (`tests/`, `make run-tests`)
+- [x] Lint e formatação com Ruff (`make check`, `make format`)
