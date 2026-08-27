@@ -31,7 +31,7 @@ exclude = ["notebooks", ".venv", "__pycache__"]
 select = ["E", "W", "F", "I", "B", "UP"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["data", "evaluation", "models", "preprocess", "train", "utils"]
+known-first-party = ["config", "data", "evaluation", "models", "preprocess", "train", "utils"]
 
 [tool.ruff.format]
 quote-style = "double"

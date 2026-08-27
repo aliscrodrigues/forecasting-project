@@ -1,5 +1,6 @@
 import torch
 
+from config import PROJECT_ROOT, default_config
 from data.loader import load_sales_data, validate_sales_schema
 from evaluation.metrics import evaluate
 from models.neural import NeuralModel
@@ -12,7 +13,6 @@ from preprocess.transform import (
     preprocess_series,
 )
 from train.loop import train_model
-from utils.config import PROJECT_ROOT, default_config
 from utils.pytorch import get_device, make_loader, predict
 
 

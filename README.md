@@ -31,6 +31,7 @@ Os dados diários filtrados são exportados por `scripts/extract_m5.py` em `data
 forecasting-project/
 ├── src/
 │   ├── main.py
+│   ├── config.py
 │   ├── data/
 │   │   └── loader.py
 │   ├── preprocess/
@@ -44,7 +45,6 @@ forecasting-project/
 │   ├── evaluation/
 │   │   └── metrics.py
 │   └── utils/
-│       ├── config.py
 │       └── pytorch.py
 ├── data/
 │   └── sample/
@@ -61,7 +61,7 @@ O `src/main.py` orquestra o fluxo abaixo.
 flowchart TD
     csv[("fake_sales.csv")]
 
-    main["main.py"] --> config["Config<br/>utils/"]
+    main["main.py"] --> config["Config<br/>config.py"]
     config --> load["Load & validate<br/>data/"]
     csv --> load
     load --> features["Aggregate & build X, y<br/>preprocess/"]
@@ -75,7 +75,7 @@ flowchart TD
 
 | Etapa                 | Módulo                    | Entrada                   | Saída                      |
 | --------------------- | ------------------------- | ------------------------- | -------------------------- |
-| Configuração          | `utils/config`            | —                         | `ProjectConfig`            |
+| Configuração          | `config`                  | —                         | `ProjectConfig`            |
 | Carga                 | `data/loader`             | CSV diário                | `DataFrame` bruto          |
 | Validação             | `data/loader`             | dados brutos              | schema validado            |
 | Agregação             | `preprocess/transform` | vendas diárias            | série mensal por SKU       |
