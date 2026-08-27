@@ -5,7 +5,33 @@ description = "Monthly SKU demand forecasting using tabular time-series features
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "certifi>=2026.7.22",
+    "datasetsforecast>=1.0.0",
+    "jupyter>=1.1.1",
+    "matplotlib>=3.11.1",
     "numpy>=2.4.6",
     "pandas>=3.0.3",
+    "pyarrow>=25.0.1",
+    "seaborn>=0.13.2",
     "torch>=2.7.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.11",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+src = ["src", "scripts"]
+exclude = ["notebooks", ".venv", "__pycache__"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["config", "data", "evaluation", "models", "preprocess", "train", "utils"]
+
+[tool.ruff.format]
+quote-style = "double"
