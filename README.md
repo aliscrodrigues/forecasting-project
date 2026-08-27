@@ -23,8 +23,7 @@ Os dados diários filtrados são exportados por `scripts/extract_m5.py` em `data
   - **X**: lags históricos (1, 2, 3, 6 e 12 meses);
   - **y**: demanda do próximo mês (`horizon = 1`).
 3. Dividir os dados com **split temporal** (treino, validação e teste).
-4. Treinar um modelo de regressão linear com **NumPy** (baseline).
-5. Evoluir para uma **MLP com PyTorch**, reutilizando o mesmo formato tabular.
+4. Treinar uma **MLP com PyTorch**.
 
 ## Estrutura do projeto
 
@@ -34,17 +33,19 @@ forecasting-project/
 │   ├── main.py
 │   ├── data/
 │   │   └── loader.py
-│   ├── preprocessing/
+│   ├── preprocess/
 │   │   ├── transform.py
-│   │   └── numpy_pipeline.py
-│   ├── models/
-│   │   └── linear.py
-│   ├── training/
+│   │   ├── scaler.py
 │   │   └── split.py
+│   ├── models/
+│   │   └── neural.py
+│   ├── train/
+│   │   └── loop.py
 │   ├── evaluation/
 │   │   └── metrics.py
 │   └── utils/
-│       └── config.py
+│       ├── config.py
+│       └── pytorch.py
 ├── data/
 │   └── sample/
 │       └── fake_sales.csv
@@ -54,7 +55,7 @@ forecasting-project/
 
 ## Pipeline
 
-O `src/main.py` orquestra o fluxo abaixo. Nesta etapa, cada função imprime a etapa correspondente e ainda não implementa a lógica (`pass`).
+O `src/main.py` orquestra o fluxo abaixo.
 
 ```mermaid
 flowchart TD
@@ -63,9 +64,9 @@ flowchart TD
     main["main.py"] --> config["Config<br/>utils/"]
     config --> load["Load & validate<br/>data/"]
     csv --> load
-    load --> features["Aggregate & build X, y<br/>preprocessing/"]
-    features --> split["Temporal split<br/>training/"]
-    split --> model["Train & predict<br/>models/"]
+    load --> features["Aggregate & build X, y<br/>preprocess/"]
+    features --> split["Time-based split<br/>preprocess/"]
+    split --> model["Train MLP<br/>train/"]
     model --> metrics["Evaluate MAE / RMSE<br/>evaluation/"]
 ```
 
@@ -77,12 +78,12 @@ flowchart TD
 | Configuração          | `utils/config`            | —                         | `ProjectConfig`            |
 | Carga                 | `data/loader`             | CSV diário                | `DataFrame` bruto          |
 | Validação             | `data/loader`             | dados brutos              | schema validado            |
-| Agregação             | `preprocessing/transform` | vendas diárias            | série mensal por SKU       |
-| Features              | `preprocessing/transform` | série mensal              | `(X, y)` tabular com lags  |
-| Split                 | `training/split`          | dataset supervisionado    | treino / validação / teste |
-| Modelo                | `models/linear`           | arrays NumPy              | previsões                  |
-| Avaliação (validação) | `evaluation/metrics`      | `y_true`, `y_pred` (val)  | MAE, RMSE                  |
-| Avaliação (teste)     | `evaluation/metrics`      | `y_true`, `y_pred` (test) | MAE, RMSE                  |
+| Agregação             | `preprocess/transform` | vendas diárias            | série mensal por SKU       |
+| Features              | `preprocess/transform` | série mensal              | dataset tabular + lags     |
+| Split                 | `preprocess/split`     | dataset supervisionado    | treino / validação / teste |
+| Scaling               | `preprocess/scaler`    | arrays NumPy              | X e y padronizados         |
+| Treino                | `train/loop`           | DataLoaders               | modelo PyTorch             |
+| Avaliação             | `evaluation/metrics`   | `y_true`, `y_pred`        | MAE, RMSE                  |
 
 
 ## Como executar
@@ -104,7 +105,7 @@ pip install -r requirements.txt
 python src/main.py
 ```
 
-Nesta etapa, as funções contêm assinaturas com type hints, `pass` e prints indicando cada etapa do pipeline; a implementação virá nas próximas fases.
+O pipeline está implementado; execute a partir da raiz do repositório:
 
 ## Decisões de design
 
@@ -116,7 +117,7 @@ Nesta etapa, as funções contêm assinaturas com type hints, `pass` e prints in
 | Features iniciais | lags 1, 2, 3, 6 e 12                      |
 | Horizonte         | 1 mês à frente                            |
 | Split             | temporal (não aleatório)                  |
-| Modelo inicial    | regressão linear (NumPy)                  |
+| Modelo            | MLP (PyTorch)                             |
 
 
 ## Dados
@@ -129,7 +130,7 @@ Nesta etapa, as funções contêm assinaturas com type hints, `pass` e prints in
 - [x] Estrutura modular e funções com type hints (stubs)
 - [x] Dataset fake de desenvolvimento
 - [x] Implementação do pipeline de dados e features
-- [x] Pipeline de pré-processamento NumPy (normalização, padronização, estatísticas, dimensões)
-- [x] Split temporal e regressão linear
+- [x] Scaling de features e target (fit no treino)
+- [x] Split temporal
 - [x] Integração com M5 (extração e análise exploratória)
-- [ ] Modelo MLP com PyTorch
+- [x] Modelo MLP com PyTorch
