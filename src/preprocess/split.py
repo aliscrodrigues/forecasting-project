@@ -29,8 +29,13 @@ def time_based_split(
     tuple[np.ndarray, np.ndarray],
     tuple[np.ndarray, np.ndarray],
     tuple[np.ndarray, np.ndarray],
+    pd.Series,
 ]:
-    """Split data by forecast target month and return (X, y) NumPy arrays per partition.
+    """Split data by forecast target month.
+
+    Returns ``(train, val, test, test_target_dates)`` where each partition is
+    ``(X, y)`` NumPy arrays and ``test_target_dates`` is the target-month Series
+    for test rows (same order as ``y_test``).
 
     ``reference_month`` is the forecast target month of interest. ``validation_months``
     is the number of calendar months immediately before that reference used for
@@ -64,4 +69,5 @@ def time_based_split(
     train = _extract_xy(train_df, feature_columns, target_column)
     val = _extract_xy(val_df, feature_columns, target_column)
     test = _extract_xy(test_df, feature_columns, target_column)
-    return train, val, test
+    test_target_dates = target_dates[test_mask]
+    return train, val, test, test_target_dates

@@ -30,7 +30,7 @@ class TestTimeBasedSplit(unittest.TestCase):
     def test_split_sizes_with_reference_target_month(self):
         df = _monthly_frame("2014-06-01", 19)
 
-        train, val, test = time_based_split(
+        train, val, test, _ = time_based_split(
             df,
             date_column="date",
             feature_columns=self.feature_columns,
@@ -51,7 +51,7 @@ class TestTimeBasedSplit(unittest.TestCase):
     def test_split_values_with_reference_target_month(self):
         df = _monthly_frame("2014-06-01", 19)
 
-        train, val, test = time_based_split(
+        train, val, test, _ = time_based_split(
             df,
             date_column="date",
             feature_columns=self.feature_columns,
@@ -86,7 +86,7 @@ class TestTimeBasedSplit(unittest.TestCase):
     def test_year_rollover_validation_window(self):
         df = _monthly_frame("2014-08-01", 8)
 
-        train, val, test = time_based_split(
+        train, val, test, _ = time_based_split(
             df,
             date_column="date",
             feature_columns=self.feature_columns,
@@ -107,7 +107,7 @@ class TestTimeBasedSplit(unittest.TestCase):
     def test_normalizes_mid_month_reference(self):
         df = _monthly_frame("2014-06-01", 19)
 
-        train, val, test = time_based_split(
+        train, val, test, _ = time_based_split(
             df,
             date_column="date",
             feature_columns=self.feature_columns,
@@ -128,7 +128,7 @@ class TestTimeBasedSplit(unittest.TestCase):
     def test_forecast_horizon_shifts_target_dates(self):
         df = _monthly_frame("2014-06-01", 19)
 
-        train, val, test = time_based_split(
+        train, val, test, _ = time_based_split(
             df,
             date_column="date",
             feature_columns=self.feature_columns,
