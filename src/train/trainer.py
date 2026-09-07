@@ -1,8 +1,13 @@
+import logging
+
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from utils.pytorch import batch_to_device, get_device
+from train.dataloader import batch_to_device
+from utils import get_device
+
+logger = logging.getLogger(__name__)
 
 
 def _mean_loss(
@@ -37,8 +42,6 @@ def train_model(
     criterion = torch.nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-    print(f"  Training on device: {device}")
-
     for epoch in range(epochs):
         model.train()
         train_loss_sum = 0.0
@@ -57,9 +60,12 @@ def train_model(
         with torch.no_grad():
             val_loss = _mean_loss(model, val_loader, criterion, device)
 
-        print(
-            f"Epoch {epoch + 1}/{epochs} - "
-            f"Train MSE: {train_loss:.4f} | Val MSE: {val_loss:.4f}"
+        logger.info(
+            "Epoch %s/%s - train MSE: %.4f | val MSE: %.4f",
+            epoch + 1,
+            epochs,
+            train_loss,
+            val_loss,
         )
 
     return model

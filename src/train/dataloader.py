@@ -1,17 +1,6 @@
-"""PyTorch helpers shared by training and inference."""
-
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-
-
-def get_device() -> torch.device:
-    """Select CUDA, Apple MPS, or CPU, in that order."""
-    if torch.cuda.is_available():
-        return torch.device("cuda")
-    if torch.backends.mps.is_available():
-        return torch.device("mps")
-    return torch.device("cpu")
 
 
 def make_loader(
@@ -47,12 +36,3 @@ def batch_to_device(
         X_batch.to(device, non_blocking=non_blocking),
         y_batch.to(device, non_blocking=non_blocking),
     )
-
-
-def predict(model: torch.nn.Module, X: np.ndarray, device: torch.device) -> np.ndarray:
-    """Run inference and return 1-D predictions on CPU as NumPy."""
-    model.eval()
-    features = torch.tensor(X, dtype=torch.float32, device=device)
-    with torch.no_grad():
-        predictions = model(features)
-    return predictions.cpu().numpy().squeeze(-1)

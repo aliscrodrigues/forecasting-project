@@ -42,14 +42,9 @@ def scale_features(
     else:
         raise ValueError(f"Unknown method: {method}. Use 'normalize' or 'standardize'.")
 
-    print(f"Scaling features with {method} (fit on train, apply to val/test)...")
     X_train_s = _apply(X_train, loc, scale)
     X_val_s = _apply(X_val, loc, scale)
     X_test_s = _apply(X_test, loc, scale)
-    print(
-        f"  → Train X={X_train_s.shape} "
-        f"mean={X_train_s.mean():.4f} std={X_train_s.std():.4f}"
-    )
     return X_train_s, X_val_s, X_test_s
 
 
@@ -63,13 +58,11 @@ def scale_target(
     loc, scale = _fit_standardize(y_train_col)
     loc_f, scale_f = float(loc.item()), float(scale.item())
 
-    print("Scaling target with standardize (fit on train, apply to val/test)...")
     y_val_col = np.asarray(y_val, dtype=np.float64).reshape(-1, 1)
     y_test_col = np.asarray(y_test, dtype=np.float64).reshape(-1, 1)
     y_train_s = _apply(y_train_col, loc, scale).ravel()
     y_val_s = _apply(y_val_col, loc, scale).ravel()
     y_test_s = _apply(y_test_col, loc, scale).ravel()
-    print(f"  → Train y mean={y_train_s.mean():.4f} std={y_train_s.std():.4f}")
     return y_train_s, y_val_s, y_test_s, loc_f, scale_f
 
 

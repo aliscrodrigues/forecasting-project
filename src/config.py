@@ -8,8 +8,9 @@ M5_DATA_PATH = PROJECT_ROOT / "data" / "m5" / "processed" / "m5_daily_sales.parq
 DEFAULT_LAGS = (1, 2, 3, 6, 12)
 DEFAULT_FORECAST_HORIZON = 1
 # M5 monthly range: 2011-01 → 2016-06 (top 50 SKUs, see scripts/extract_m5.py)
-DEFAULT_TRAIN_END = "2015-06"
-DEFAULT_VAL_END = "2015-12"
+DEFAULT_REFERENCE_MONTH = "2015-06"
+DEFAULT_VALIDATION_MONTHS = 6
+
 DEFAULT_BATCH_SIZE = 32
 DEFAULT_EPOCHS = 10
 DEFAULT_LEARNING_RATE = 0.001
@@ -19,8 +20,8 @@ DEFAULT_LEARNING_RATE = 0.001
 class ProjectConfig:
     lags: tuple[int, ...]
     forecast_horizon: int
-    train_end: str
-    val_end: str
+    reference_month: str
+    validation_months: int
     target_column: str
     sku_column: str
     date_column: str
@@ -32,12 +33,11 @@ class ProjectConfig:
 
 def default_config() -> ProjectConfig:
     """Return the default project configuration."""
-    print("Loading default project configuration...")
     return ProjectConfig(
         lags=DEFAULT_LAGS,
         forecast_horizon=DEFAULT_FORECAST_HORIZON,
-        train_end=DEFAULT_TRAIN_END,
-        val_end=DEFAULT_VAL_END,
+        reference_month=DEFAULT_REFERENCE_MONTH,
+        validation_months=DEFAULT_VALIDATION_MONTHS,
         target_column="sales",
         sku_column="item_id",
         date_column="date",

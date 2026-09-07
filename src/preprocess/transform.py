@@ -9,17 +9,12 @@ TARGET_AHEAD_COLUMN = "target"
 
 def preprocess_series(data: pd.DataFrame) -> pd.DataFrame:
     """Aggregate daily sales into monthly time series per SKU across all stores."""
-    print("Preprocessing daily sales into monthly time series per SKU...")
     data = data.copy()
     data[MONTH_COLUMN] = data[DATE_COLUMN].dt.to_period("M").dt.to_timestamp()
     monthly = (
         data.groupby([SKU_COLUMN, MONTH_COLUMN])[TARGET_COLUMN].sum().reset_index()
     )
     monthly = monthly.sort_values([SKU_COLUMN, MONTH_COLUMN]).reset_index(drop=True)
-    print(
-        f"  → Monthly series: {len(monthly)} records "
-        f"({monthly[SKU_COLUMN].nunique()} SKUs)"
-    )
     return monthly
 
 
@@ -47,9 +42,7 @@ def build_dataset(
     Returns the dataset (NaN rows dropped) and the lag column names.
     """
     lag_columns = _lag_column_names(lags)
-    print(f"Building dataset (X, y) with horizon={horizon}, lags={lags}...")
     df = _add_lag_features(monthly, lags)
     df[TARGET_AHEAD_COLUMN] = df.groupby(SKU_COLUMN)[TARGET_COLUMN].shift(-horizon)
     df = df.dropna().reset_index(drop=True)
-    print(f"  → Dataset: {len(df)} samples")
     return df, lag_columns

@@ -22,8 +22,22 @@ Os dados diários filtrados são exportados por `scripts/extract_m5.py` em `data
 2. Transformar cada série temporal em um dataset tabular `(X, y)`:
   - **X**: lags históricos (1, 2, 3, 6 e 12 meses);
   - **y**: demanda do próximo mês (`horizon = 1`).
-3. Dividir os dados com **split temporal** (treino, validação e teste).
+3. Dividir os dados com **split temporal orientado ao mês-alvo da previsão** (treino, validação e teste).
 4. Treinar uma **MLP com PyTorch**.
+
+### Parâmetros temporais
+
+A configuração em `src/config.py` usa:
+
+- `reference_month`: mês-alvo da previsão de referência (ex.: `2015-06` prevê demanda de jun/2015).
+- `validation_months`: quantidade de meses-calendário imediatamente anteriores à referência usados para validação.
+- `forecast_horizon`: deslocamento entre a data de origem da linha e o mês do alvo.
+
+Com `reference_month="2015-06"`, `validation_months=6` e `forecast_horizon=1`:
+
+- **Treino**: alvos anteriores a dez/2014.
+- **Validação**: alvos de dez/2014 a mai/2015.
+- **Teste/previsão**: alvos a partir de jun/2015 (inclui a previsão de referência).
 
 ## Estrutura do projeto
 
@@ -41,7 +55,7 @@ forecasting-project/
 │   ├── models/
 │   │   └── neural.py
 │   ├── train/
-│   │   └── loop.py
+│   │   └── trainer.py
 │   ├── evaluation/
 │   │   └── metrics.py
 │   └── utils/
@@ -184,7 +198,7 @@ ruff format src scripts tests
 | Granularidade     | mensal                                    |
 | Features iniciais | lags 1, 2, 3, 6 e 12                      |
 | Horizonte         | 1 mês à frente                            |
-| Split             | temporal (não aleatório)                  |
+| Split             | temporal por mês-alvo (`reference_month` + `validation_months`) |
 | Modelo            | MLP (PyTorch)                             |
 
 
