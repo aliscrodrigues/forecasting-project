@@ -8,6 +8,7 @@ def make_loader(
     y: np.ndarray,
     batch_size: int = 32,
     shuffle: bool = False,
+    seed: int | None = None,
 ) -> DataLoader:
     """Build a DataLoader from NumPy feature and target arrays."""
     if batch_size <= 0:
@@ -23,7 +24,16 @@ def make_loader(
         y_array = y_array.reshape(-1, 1)
     y_tensor = torch.from_numpy(y_array)
     dataset = TensorDataset(X_tensor, y_tensor)
-    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    generator = None
+    if shuffle and seed is not None:
+        generator = torch.Generator()
+        generator.manual_seed(seed)
+    return DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        generator=generator,
+    )
 
 
 def batch_to_device(
