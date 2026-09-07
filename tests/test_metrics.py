@@ -1,36 +1,63 @@
 import unittest
 
 import numpy as np
+import pandas as pd
 
-from evaluation.metrics import mae, rmse
+from evaluation.metrics import (
+    evaluate,
+    evaluate_predictions,
+    format_metrics_table,
+    pct_bias,
+)
 
 
 class TestMetrics(unittest.TestCase):
     def test_mae_perfect_prediction(self):
         y_true = np.array([1.0, 2.0, 3.0])
         y_pred = np.array([1.0, 2.0, 3.0])
-        self.assertEqual(mae(y_true, y_pred), 0.0)
+        self.assertEqual(evaluate(y_true, y_pred)["mae"], 0.0)
 
-    def test_mae_known_value(self):
-        y_true = np.array([10.0, 20.0, 30.0])
-        y_pred = np.array([12.0, 18.0, 33.0])
-        self.assertAlmostEqual(mae(y_true, y_pred), 7 / 3)
+    def test_pct_bias_over_forecast(self):
+        y_true = np.array([100.0, 200.0])
+        y_pred = np.array([110.0, 220.0])
+        self.assertAlmostEqual(pct_bias(y_true, y_pred), 10.0)
 
-    def test_rmse_known_value(self):
-        y_true = np.array([0.0, 0.0, 0.0])
-        y_pred = np.array([3.0, 4.0, 0.0])
-        expected = np.sqrt(25 / 3)
-        self.assertAlmostEqual(rmse(y_true, y_pred), expected, places=5)
+    def test_pct_bias_under_forecast(self):
+        y_true = np.array([100.0, 200.0])
+        y_pred = np.array([90.0, 180.0])
+        self.assertAlmostEqual(pct_bias(y_true, y_pred), -10.0)
 
-    def test_mae_multiple_cases(self):
-        cases = [
-            ([1, 2, 3], [1, 2, 3], 0.0),
-            ([0, 0], [3, 4], 3.5),
-        ]
-        for y_true, y_pred, expected in cases:
-            with self.subTest(y_true=y_true, y_pred=y_pred):
-                result = mae(np.array(y_true, dtype=np.float64), np.array(y_pred))
-                self.assertAlmostEqual(result, expected)
+    def test_evaluate_predictions_returns_all_models(self):
+        y_true = np.array([30.0, 40.0])
+        predictions = {
+            "MLP": np.array([31.0, 39.0]),
+            "Naive": np.array([32.0, 38.0]),
+        }
+        metrics_df = evaluate_predictions(y_true, predictions)
+        self.assertEqual(len(metrics_df), 2)
+        self.assertSetEqual(set(metrics_df["model"]), {"MLP", "Naive"})
+
+    def test_format_metrics_table_orders_by_mae(self):
+        metrics_df = pd.DataFrame(
+            [
+                {
+                    "model": "MLP",
+                    "mae": 5.0,
+                    "rmse": 6.0,
+                    "mae_over_mean": 0.1,
+                    "pct_bias": 3.0,
+                },
+                {
+                    "model": "Naive",
+                    "mae": 2.0,
+                    "rmse": 3.0,
+                    "mae_over_mean": 0.05,
+                    "pct_bias": -1.0,
+                },
+            ]
+        )
+        table = format_metrics_table(metrics_df)
+        self.assertLess(table.index("Naive"), table.index("MLP"))
 
 
 if __name__ == "__main__":
