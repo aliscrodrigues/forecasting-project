@@ -20,10 +20,11 @@ Os dados diários filtrados são exportados por `scripts/extract_m5.py` em `data
 
 1. Carregar vendas brutas (diárias) e agregar por mês e por SKU.
 2. Transformar cada série temporal em um dataset tabular `(X, y)`:
-  - **X**: lags históricos (1, 2, 3, 6 e 12 meses);
+  - **X**: lags `0–12`, médias móveis (3, 6, 12), sazonalidade, momentum e YoY (20 features no total);
   - **y**: demanda do próximo mês (`horizon = 1`).
 3. Dividir os dados com **split temporal orientado ao mês-alvo da previsão** (treino, validação e teste).
 4. Treinar uma **MLP com PyTorch**.
+5. Comparar com **baselines do StatsForecast** no período de teste.
 
 ### Parâmetros temporais
 
@@ -46,8 +47,9 @@ forecasting-project/
 ├── src/
 │   ├── main.py
 │   ├── config.py
+│   ├── baselines.py
 │   ├── data/
-│   │   └── loader.py
+│   │   └── reader.py
 │   ├── preprocess/
 │   │   ├── transform.py
 │   │   ├── scaler.py
@@ -55,16 +57,22 @@ forecasting-project/
 │   ├── models/
 │   │   └── neural.py
 │   ├── train/
-│   │   └── trainer.py
+│   │   ├── trainer.py
+│   │   └── dataloader.py
+│   ├── inference/
+│   │   └── predict.py
 │   ├── evaluation/
 │   │   └── metrics.py
-│   └── utils/
-│       └── pytorch.py
+│   └── utils.py
 ├── tests/
+│   ├── test_baselines.py
 │   ├── test_metrics.py
 │   ├── test_scaler.py
 │   ├── test_split.py
 │   └── test_transform.py
+├── notebooks/
+│   ├── forecast_analysis.ipynb
+│   └── m5_series_analysis.ipynb
 ├── Makefile
 ├── data/
 │   └── sample/
@@ -79,31 +87,80 @@ O `src/main.py` orquestra o fluxo abaixo.
 
 ```mermaid
 flowchart TD
-    csv[("fake_sales.csv")]
+    data[("M5 parquet ou fake_sales.csv")]
 
     main["main.py"] --> config["Config<br/>config.py"]
     config --> load["Load & validate<br/>data/"]
-    csv --> load
+    data --> load
     load --> features["Aggregate & build X, y<br/>preprocess/"]
     features --> split["Time-based split<br/>preprocess/"]
     split --> model["Train MLP<br/>train/"]
-    model --> metrics["Evaluate MAE / RMSE<br/>evaluation/"]
+    features --> baselines["Baseline forecasts<br/>baselines.py"]
+    model --> evaluator["Compare models<br/>evaluation/metrics.py"]
+    baselines --> evaluator
+    model --> artifact[("demand_model.pth")]
 ```
-
-
-
 
 | Etapa                 | Módulo                    | Entrada                   | Saída                      |
 | --------------------- | ------------------------- | ------------------------- | -------------------------- |
 | Configuração          | `config`                  | —                         | `ProjectConfig`            |
-| Carga                 | `data/loader`             | CSV diário                | `DataFrame` bruto          |
-| Validação             | `data/loader`             | dados brutos              | schema validado            |
+| Carga                 | `data/reader`             | CSV diário                | `DataFrame` bruto          |
+| Validação             | `data/reader`             | dados brutos              | schema validado            |
 | Agregação             | `preprocess/transform` | vendas diárias            | série mensal por SKU       |
 | Features              | `preprocess/transform` | série mensal              | dataset tabular + lags     |
-| Split                 | `preprocess/split`     | dataset supervisionado    | treino / validação / teste |
+| Split                 | `preprocess/split`     | dataset supervisionado    | treino / validação / teste + datas-alvo do teste |
 | Scaling               | `preprocess/scaler`    | arrays NumPy              | X e y padronizados         |
-| Treino                | `train/loop`           | DataLoaders               | modelo PyTorch             |
-| Avaliação             | `evaluation/metrics`   | `y_true`, `y_pred`        | MAE, RMSE                  |
+| Treino                | `train/trainer`           | DataLoaders               | modelo PyTorch (salvo em `demand_model.pth`) |
+| Baselines             | `baselines`               | séries mensais            | previsões StatsForecast    |
+| Avaliação             | `evaluation/metrics`   | `y_true`, `y_pred`        | tabela MAE / RMSE / mae/mean / %bias |
+
+### Modelo neural
+
+A `NeuralModel` usa MLP `256 → 128 → 64 → 32` com ReLU, Dropout e treino com **MAE (L1)** + early stopping (configurável via `DEFAULT_LOSS` em `config.py`).
+
+Hiperparâmetros padrão em `config.py` (ajustados manualmente com base em experimentos):
+
+| Parâmetro | Valor |
+| --- | --- |
+| `hidden_dims` | `(256, 128, 64, 32)` |
+| `dropout` | `0.20` |
+| `learning_rate` | `0.001` |
+| `weight_decay` | `1e-5` |
+| `batch_size` | `32` |
+| `epochs` / `patience` | `500` / `50` |
+| `seed` | `42` |
+
+Resultados no teste M5 (top 50 SKUs, `reference_month=2015-06`, seed=42):
+
+| Modelo | MAE |
+| --- | ---: |
+| **MLP** | **779.81** |
+| Naive | 824.90 |
+| WindowAverage_12 | 913.09 |
+| SeasonalNaive_12 | 929.33 |
+
+Variantes de arquitetura/hiperparâmetros testadas manualmente — nenhuma superou o padrão acima em MAE de teste.
+
+Lags e janelas de média móvel são configuráveis em `config.py` (`DEFAULT_LAGS`, `DEFAULT_ROLLING_WINDOWS`).
+
+### Modelos baseline
+
+O módulo `src/baselines.py` usa [StatsForecast](https://github.com/Nixtla/statsforecast) para gerar previsões no mesmo período de teste da MLP:
+
+- `Naive`
+- `WindowAverage_3`
+- `WindowAverage_6`
+- `WindowAverage_12`
+- `SeasonalNaive_12`
+
+A avaliação final compara MLP + baselines apenas no teste, em uma tabela ordenada por MAE.
+
+### Notebooks
+
+| Notebook | Descrição |
+| --- | --- |
+| `notebooks/forecast_analysis.ipynb` | Demonstração do pipeline com gráficos comparando MLP vs baselines |
+| `notebooks/m5_series_analysis.ipynb` | Exploração inicial das séries M5 (seleção dos top 50 SKUs) |
 
 
 ## Como executar
@@ -123,7 +180,7 @@ make setup
 
 Cria o `.venv`, resolve a versão do Python (`.python-version`) e instala dependências de runtime e desenvolvimento (incluindo Ruff).
 
-Com dados de exemplo (`data/sample/fake_sales.csv`):
+Com dados de exemplo (`data/sample/fake_sales.csv`), se o parquet M5 ainda não existir:
 
 ```bash
 make run-project
@@ -135,6 +192,8 @@ Com o dataset M5 (download + preparação — gera `data/m5/processed/m5_daily_s
 make extract-data
 make run-project
 ```
+
+`default_config()` usa automaticamente o parquet M5 quando ele existe; caso contrário, cai no CSV de exemplo.
 
 ### Comandos do Makefile
 
@@ -196,10 +255,10 @@ ruff format src scripts tests
 | ----------------- | ----------------------------------------- |
 | SKU               | `item_id` agregado em todas as `store_id` |
 | Granularidade     | mensal                                    |
-| Features iniciais | lags 1, 2, 3, 6 e 12                      |
+| Features iniciais | lags + rolling windows + sazonalidade e momentum (`config.py`) |
 | Horizonte         | 1 mês à frente                            |
 | Split             | temporal por mês-alvo (`reference_month` + `validation_months`) |
-| Modelo            | MLP (PyTorch)                             |
+| Modelo            | MLP (PyTorch) + baselines StatsForecast |
 
 
 ## Dados
@@ -209,12 +268,13 @@ ruff format src scripts tests
 
 ## Roadmap
 
-- [x] Estrutura modular e funções com type hints (stubs)
+- [x] Estrutura modular e funções com type hints
 - [x] Dataset fake de desenvolvimento
 - [x] Implementação do pipeline de dados e features
 - [x] Scaling de features e target (fit no treino)
 - [x] Split temporal
 - [x] Integração com M5 (extração e análise exploratória)
 - [x] Modelo MLP com PyTorch
+- [x] Comparação com baselines StatsForecast
 - [x] Testes unitários (`tests/`, `make run-tests`)
 - [x] Lint e formatação com Ruff (`make check`, `make format`)
