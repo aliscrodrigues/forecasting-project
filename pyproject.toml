@@ -13,6 +13,7 @@ dependencies = [
     "pandas>=3.0.3",
     "pyarrow>=25.0.1",
     "seaborn>=0.13.2",
+    "statsforecast>=2.0.0",
     "torch>=2.7.0",
 ]
 
@@ -31,7 +32,7 @@ exclude = ["notebooks", ".venv", "__pycache__"]
 select = ["E", "W", "F", "I", "B", "UP"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["config", "data", "evaluation", "models", "preprocess", "train", "utils"]
+known-first-party = ["baselines", "config", "data", "evaluation", "inference", "models", "preprocess", "train", "utils"]
 
 [tool.ruff.format]
 quote-style = "double"
