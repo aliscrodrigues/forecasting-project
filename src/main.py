@@ -97,6 +97,12 @@ def main() -> None:
         len(y_val),
         len(y_test),
     )
+    if len(y_train) == 0:
+        raise ValueError(
+            "Training partition is empty. For short histories (e.g. fake_sales.csv), "
+            "use FORECASTING_DATA=sample so reference_month/validation_months match "
+            "the sample dataset, or adjust those settings in config.py."
+        )
 
     # Step 4: scale features and targets using training-set statistics
     logger.info("[4/7] Scale features and targets")

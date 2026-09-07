@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -11,6 +12,9 @@ DEFAULT_FORECAST_HORIZON = 1
 # M5 monthly range: 2011-01 → 2016-06 (top 50 SKUs, see scripts/extract_m5.py)
 DEFAULT_REFERENCE_MONTH = "2015-06"
 DEFAULT_VALIDATION_MONTHS = 6
+# fake_sales.csv spans 2014-01 → 2015-12 (see data/sample/fake_sales.csv)
+SAMPLE_REFERENCE_MONTH = "2015-10"
+SAMPLE_VALIDATION_MONTHS = 2
 
 DEFAULT_BATCH_SIZE = 32
 DEFAULT_EPOCHS = 500
@@ -45,25 +49,44 @@ class ProjectConfig:
     seed: int
 
 
-def _default_data_path() -> Path:
-    """Prefer the M5 parquet when present; otherwise fall back to the sample CSV."""
+def _resolve_data_path() -> Path:
+    """Resolve dataset path from env override or filesystem defaults.
+
+    Set ``FORECASTING_DATA=sample`` or ``FORECASTING_DATA=m5`` to force a source.
+    Otherwise prefer the M5 parquet when present, else the sample CSV.
+    """
+    override = os.environ.get("FORECASTING_DATA", "").strip().lower()
+    if override == "sample":
+        return SAMPLE_DATA_PATH
+    if override == "m5":
+        return M5_DATA_PATH
     if M5_DATA_PATH.exists():
         return M5_DATA_PATH
     return SAMPLE_DATA_PATH
 
 
-def default_config() -> ProjectConfig:
+def _is_sample_data_path(data_path: Path) -> bool:
+    return data_path.resolve() == SAMPLE_DATA_PATH.resolve()
+
+
+def default_config(data_path: Path | None = None) -> ProjectConfig:
     """Return the default project configuration."""
+    resolved_path = data_path or _resolve_data_path()
+    use_sample_split = _is_sample_data_path(resolved_path)
     return ProjectConfig(
         lags=DEFAULT_LAGS,
         rolling_windows=DEFAULT_ROLLING_WINDOWS,
         forecast_horizon=DEFAULT_FORECAST_HORIZON,
-        reference_month=DEFAULT_REFERENCE_MONTH,
-        validation_months=DEFAULT_VALIDATION_MONTHS,
+        reference_month=(
+            SAMPLE_REFERENCE_MONTH if use_sample_split else DEFAULT_REFERENCE_MONTH
+        ),
+        validation_months=(
+            SAMPLE_VALIDATION_MONTHS if use_sample_split else DEFAULT_VALIDATION_MONTHS
+        ),
         target_column="sales",
         sku_column="item_id",
         date_column="date",
-        data_path=_default_data_path(),
+        data_path=resolved_path,
         batch_size=DEFAULT_BATCH_SIZE,
         epochs=DEFAULT_EPOCHS,
         learning_rate=DEFAULT_LEARNING_RATE,
@@ -74,3 +97,8 @@ def default_config() -> ProjectConfig:
         loss=DEFAULT_LOSS,
         seed=DEFAULT_SEED,
     )
+
+
+def sample_config() -> ProjectConfig:
+    """Return configuration for the development sample CSV."""
+    return default_config(SAMPLE_DATA_PATH)

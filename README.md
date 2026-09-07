@@ -180,10 +180,10 @@ make setup
 
 Cria o `.venv`, resolve a versão do Python (`.python-version`) e instala dependências de runtime e desenvolvimento (incluindo Ruff).
 
-Com dados de exemplo (`data/sample/fake_sales.csv`), se o parquet M5 ainda não existir:
+Com dados de exemplo (`data/sample/fake_sales.csv`):
 
 ```bash
-make run-project
+make run-project-sample
 ```
 
 Com o dataset M5 (download + preparação — gera `data/m5/processed/m5_daily_sales.parquet`):
@@ -193,7 +193,7 @@ make extract-data
 make run-project
 ```
 
-`default_config()` usa automaticamente o parquet M5 quando ele existe; caso contrário, cai no CSV de exemplo.
+`make run-project` usa o parquet M5 quando ele existe; caso contrário, cai no CSV de exemplo com parâmetros de split ajustados ao histórico curto. Para forçar o sample mesmo com M5 presente, use `make run-project-sample` (ou `FORECASTING_DATA=sample`).
 
 ### Comandos do Makefile
 
@@ -201,6 +201,7 @@ make run-project
 | --- | --- |
 | `make setup` | Instala dependências (`uv sync --group dev`) |
 | `make run-project` | Executa o pipeline de previsão (`src/main.py`) |
+| `make run-project-sample` | Executa o pipeline com `fake_sales.csv` (força sample) |
 | `make run-tests` | Roda os testes unitários (`unittest`) |
 | `make extract-data` | Baixa e prepara o dataset M5 (`scripts/extract_m5.py`) |
 | `make check` | Lint com Ruff (`src`, `scripts`, `tests`) |
